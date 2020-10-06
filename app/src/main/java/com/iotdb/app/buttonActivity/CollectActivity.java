@@ -1,4 +1,4 @@
-package com.example.wjy.buttontest;
+package com.iotdb.app.buttonActivity;
 
 import android.Manifest;
 import android.app.Activity;
@@ -52,7 +52,7 @@ class RestfulPoint implements Serializable {
   private String password;
   private String imei;
   private long time;
-  private Map<String, Float> values = new HashMap<>();
+  private Map<String, Float> values;
 
   public RestfulPoint(String user, String password, String imei, long time,
       Map<String, Float> values) {
@@ -545,10 +545,10 @@ public class CollectActivity extends Activity implements View.OnClickListener {
     gpsCheck = findViewById(R.id.gps);
 
     Intent intent = getIntent();
-    ipAddr = intent.getStringExtra("ip");
-    port = intent.getStringExtra("port");
-    user = intent.getStringExtra("username");
-    password = intent.getStringExtra("password");
+    ipAddr = intent.getStringExtra(appConstant.IP_STR);
+    port = intent.getStringExtra(appConstant.PORT_STR);
+    user = intent.getStringExtra(appConstant.USERNAME_STR);
+    password = intent.getStringExtra(appConstant.PASSWORD_STR);
     Log.d("ip地址--->", ipAddr);
     Log.d("端口号--->", port);
     // 获取电话管理对象
@@ -700,21 +700,18 @@ public class CollectActivity extends Activity implements View.OnClickListener {
       }
     });
 
-    btn3.setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(View view) {
-        if (networkConn == false) {
-          Toast.makeText(CollectActivity.this, "请检查网络连接", Toast.LENGTH_SHORT).show();
-          //return;
-        } else {
-          // 给bnt1添加点击响应事件
-          Intent intent = new Intent(CollectActivity.this, DisplayActivity.class);
-          intent.putExtra("ip", ipAddr);//设置参数ip
-          intent.putExtra("username", user); //设置参数user
-          intent.putExtra("imei", phoneIMEI); //设置参数pswd
-          //启动
-          startActivity(intent);
-        }
+    btn3.setOnClickListener(view -> {
+      if (networkConn == false) {
+        Toast.makeText(CollectActivity.this, "请检查网络连接", Toast.LENGTH_SHORT).show();
+        //return;
+      } else {
+        // 给bnt1添加点击响应事件
+        Intent intent1 = new Intent(CollectActivity.this, DisplayActivity.class);
+        intent1.putExtra(appConstant.IP_STR, ipAddr);//设置参数ip
+        intent1.putExtra(appConstant.USERNAME_STR, user); //设置参数user
+        intent1.putExtra(appConstant.IMEI_STR, phoneIMEI); //设置参数pswd
+        //启动
+        startActivity(intent1);
       }
     });
 

@@ -3,8 +3,8 @@ apply plugin: 'com.android.application'
 android {
     compileSdkVersion 28
     defaultConfig {
-        applicationId "com.example.wjy.buttontest"
-        minSdkVersion 15
+        applicationId 'com.iotdb.app.buttonActivity'
+        minSdkVersion 20
         targetSdkVersion 28
         versionCode 1
         versionName "1.0"

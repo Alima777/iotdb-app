@@ -1,4 +1,4 @@
-package com.example.wjy.buttontest;
+package com.iotdb.app.buttonActivity;
 
 
 import android.app.Activity;
@@ -20,9 +20,9 @@ public class DisplayActivity extends Activity {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_display);
     Intent intent = getIntent();
-    ip = intent.getStringExtra("ip");
-    imei = intent.getStringExtra("imei");
-    userName = intent.getStringExtra("username");
+    ip = intent.getStringExtra(appConstant.IP_STR);
+    imei = intent.getStringExtra(appConstant.IMEI_STR);
+    userName = intent.getStringExtra(appConstant.USERNAME_STR);
     String urlStr = "http://%s:33000/d/%s/%s";
 //        urlEt = findViewById(R.id.ip);
     String url = String.format(urlStr, ip, imei, userName);

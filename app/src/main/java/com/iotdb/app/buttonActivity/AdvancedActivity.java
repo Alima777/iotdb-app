@@ -1,4 +1,4 @@
-package com.example.wjy.buttontest;
+package com.iotdb.app.buttonActivity;
 
 import android.app.Activity;
 import android.content.Context;
@@ -17,7 +17,7 @@ public class AdvancedActivity extends Activity implements View.OnClickListener {
   private String ipAddr = "";
   private String port = "";
   private EditText ipEdit, portEdit;
-  private Boolean saveLogin;
+  private Boolean saveIpConfig;
   private CheckBox saveCheckBox;
   private SharedPreferences loginPreferences;
   private SharedPreferences.Editor loginPrefsEditor;
@@ -27,33 +27,25 @@ public class AdvancedActivity extends Activity implements View.OnClickListener {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_advanced);
 
+    // init components
+    ipEdit = findViewById(R.id.ip);
+    portEdit = findViewById(R.id.port);
+    saveCheckBox = findViewById(R.id.checkSave2);
+    Button advSettingConfirmButton = findViewById(R.id.submitAdvSettingConfirmButton);
+    advSettingConfirmButton.setOnClickListener(this);
+
     loginPreferences = getSharedPreferences("loginPrefs", MODE_PRIVATE);
     loginPrefsEditor = loginPreferences.edit();
-    /**
-     * 绑定UI组件给类对象
-     */
-    ipEdit = (EditText) findViewById(R.id.ip);
-    ipAddr = ipEdit.getText().toString();
-    portEdit = (EditText) findViewById(R.id.port);
-    port = portEdit.getText().toString();
-    saveCheckBox = (CheckBox) findViewById(R.id.checkSave2);
-    Button btn1 = (Button) findViewById(R.id.submit2);
-    btn1.setOnClickListener(this);
-
-    saveLogin = loginPreferences.getBoolean("saveLogin", false);
-    ipEdit.setText(loginPreferences.getString("ipaddr", "166.111.7.145"));
-    portEdit.setText(loginPreferences.getString("port", "38083"));
-
-    if (saveLogin == true) {
+    saveIpConfig = loginPreferences.getBoolean("saveIpConfig", false);
+    if (saveIpConfig) {
       saveCheckBox.setChecked(true);
     }
-
+    ipEdit.setText(loginPreferences.getString(appConstant.IP_ADDRESS, appConstant.DEFAULT_IP));
+    portEdit.setText(loginPreferences.getString(appConstant.PORT_STR, appConstant.DEFAULT_PORT));
   }
 
   @Override
   public void onClick(View v) {
-    InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-
     ipAddr = ipEdit.getText().toString();
     port = portEdit.getText().toString();
 
@@ -63,20 +55,18 @@ public class AdvancedActivity extends Activity implements View.OnClickListener {
     }
 
     if (saveCheckBox.isChecked()) {
-      loginPrefsEditor.putBoolean("saveLogin", true);
-      loginPrefsEditor.putString("ipaddr", ipAddr);
-      loginPrefsEditor.putString("port", port);
-      loginPrefsEditor.commit();
+      loginPrefsEditor.putBoolean("saveIpConfig", true);
+      loginPrefsEditor.putString(appConstant.IP_ADDRESS, ipAddr);
+      loginPrefsEditor.putString(appConstant.PORT_STR, port);
     } else {
       loginPrefsEditor.clear();
-      loginPrefsEditor.commit();
     }
+    loginPrefsEditor.commit();
 
-    // 给bnt1添加点击响应事件
-    Intent intent = new Intent(AdvancedActivity.this, MainActivity.class);
-    intent.putExtra("ip", ipAddr);//设置参数ip
-    intent.putExtra("port", port); //设置参数port
-    //启动
-    startActivity(intent);
+    Intent intent = new Intent();
+    intent.putExtra(appConstant.IP_ADDRESS, ipAddr);//设置参数ip
+    intent.putExtra(appConstant.PORT_STR, port); //设置参数port
+    setResult(RESULT_OK, intent);
+    finish();
   }
 }
