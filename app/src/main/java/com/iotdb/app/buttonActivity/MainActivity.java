@@ -24,7 +24,8 @@ import android.widget.Toast;
 public class MainActivity extends AppCompatActivity implements OnClickListener {
 
   //请求状态码
-  private static int requestCode = 1;
+  private int REQUEST_PERMISSION_CODE = 1;
+  private int REQUSET_IPCONFIG_CODE = 2;
 
   private String ipAddr = "";
   private String port = "";
@@ -59,7 +60,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
     Button advSettingButton = findViewById(R.id.submitAdvSettingButton);
     advSettingButton.setOnClickListener(v -> {
       Intent intent = new Intent(MainActivity.this, AdvancedActivity.class);
-      startActivityForResult(intent, getRequestCode());
+      startActivityForResult(intent, REQUSET_IPCONFIG_CODE);
     });
 
     SharedPreferences loginPreferences = getSharedPreferences("loginPrefs", MODE_PRIVATE);
@@ -84,12 +85,8 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         != PackageManager.PERMISSION_GRANTED
     ) {
 //            Toast.makeText(this, "需要授权才能使用我们的服务!", Toast.LENGTH_LONG).show();
-      ActivityCompat.requestPermissions(this, PERMISSIONS_STORAGE, getRequestCode());
+      ActivityCompat.requestPermissions(this, PERMISSIONS_STORAGE, REQUEST_PERMISSION_CODE);
     }
-  }
-
-  public static int getRequestCode() {
-    return requestCode++;
   }
 
   @Override
@@ -126,6 +123,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
 
   @Override
   protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+    // judge requestCode if multi intents are requested for result
     if (resultCode != RESULT_OK || data == null) {
       return;
     }
