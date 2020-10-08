@@ -54,11 +54,11 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
     passEdit = findViewById(R.id.pswd);
     saveCheckBox = findViewById(R.id.checkSave);
 
-    Button loginConfirmButton = findViewById(R.id.submitLoginConfirmButton);
-    loginConfirmButton.setOnClickListener(this);
+    Button loginConfirmBtn = findViewById(R.id.submitLoginConfirm);
+    loginConfirmBtn.setOnClickListener(this);
 
-    Button advSettingButton = findViewById(R.id.submitAdvSettingButton);
-    advSettingButton.setOnClickListener(v -> {
+    Button advSettingBtn = findViewById(R.id.submitAdvSetting);
+    advSettingBtn.setOnClickListener(v -> {
       Intent intent = new Intent(MainActivity.this, AdvancedActivity.class);
       startActivityForResult(intent, REQUSET_IPCONFIG_CODE);
     });

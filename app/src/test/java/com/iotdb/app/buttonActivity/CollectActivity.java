@@ -397,8 +397,8 @@ public class CollectActivity extends AppCompatActivity implements View.OnClickLi
     myBroadcastReceiver = new MyBroadcastReceiver();
     registerReceiver(myBroadcastReceiver, intentFilter);
 
-    btn1 = (Button) findViewById(R.id.b1);
-    btn2 = (Button) findViewById(R.id.b2);
+    btn1 = (Button) findViewById(R.id.startCollect);
+    btn2 = (Button) findViewById(R.id.stopCollect);
     btn2.setEnabled(false);
     btn2.setBackgroundColor(Color.GRAY);
 

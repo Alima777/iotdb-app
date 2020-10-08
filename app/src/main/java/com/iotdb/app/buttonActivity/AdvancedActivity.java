@@ -1,12 +1,10 @@
 package com.iotdb.app.buttonActivity;
 
 import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
@@ -31,8 +29,8 @@ public class AdvancedActivity extends Activity implements View.OnClickListener {
     ipEdit = findViewById(R.id.ip);
     portEdit = findViewById(R.id.port);
     saveCheckBox = findViewById(R.id.checkSave2);
-    Button advSettingConfirmButton = findViewById(R.id.submitAdvSettingConfirmButton);
-    advSettingConfirmButton.setOnClickListener(this);
+    Button advSettingConfirmBtn = findViewById(R.id.submitAdvSettingConfirm);
+    advSettingConfirmBtn.setOnClickListener(this);
 
     loginPreferences = getSharedPreferences("loginPrefs", MODE_PRIVATE);
     loginPrefsEditor = loginPreferences.edit();

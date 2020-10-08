@@ -262,9 +262,9 @@ public class CollectActivity extends Activity implements View.OnClickListener {
   private boolean mag = false;
   private boolean gps = false;
 
-  private Button btn1;
-  private Button btn2;
-  private Button btn3;
+  private Button startCollectBtn;
+  private Button stopCollectBtn;
+  private Button viewDataBtn;
 
   private CheckBox tempCheck;
   private CheckBox oriCheck;
@@ -287,7 +287,7 @@ public class CollectActivity extends Activity implements View.OnClickListener {
   private Handler mHandler = new Handler();
   private Runnable mRunnable;
 
-  private LocationManager lm;
+  private LocationManager locationManager;
 
   private boolean networkConn;
   private boolean createOrNot = true;
@@ -498,19 +498,19 @@ public class CollectActivity extends Activity implements View.OnClickListener {
     myBroadcastReceiver = new MyBroadcastReceiver();
     registerReceiver(myBroadcastReceiver, intentFilter);
 
-    btn1 = (Button) findViewById(R.id.b1);
-    btn2 = (Button) findViewById(R.id.b2);
-    btn3 = (Button) findViewById(R.id.b3);
-    btn2.setEnabled(false);
-    btn2.setBackgroundResource(R.drawable.shape1);
+    startCollectBtn = findViewById(R.id.startCollect);
+    stopCollectBtn = findViewById(R.id.stopCollect);
+    viewDataBtn = findViewById(R.id.viewData);
+    stopCollectBtn.setEnabled(false);
+    stopCollectBtn.setBackgroundResource(R.drawable.shape1);
 
-    lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-    Criteria c = new Criteria();
-    c.setAccuracy(Criteria.ACCURACY_FINE);//高精度
-    c.setAltitudeRequired(true);//包含高度信息
-    c.setBearingRequired(true);//包含方位信息
-    c.setSpeedRequired(true);//包含速度信息
-    String bestProvider = lm.getBestProvider(c, true);
+    locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+    Criteria criteria = new Criteria();
+    criteria.setAccuracy(Criteria.ACCURACY_FINE);  //高精度
+    criteria.setAltitudeRequired(true);  //包含高度信息
+    criteria.setBearingRequired(true); //包含方位信息
+    criteria.setSpeedRequired(true); //包含速度信息
+    String bestProvider = locationManager.getBestProvider(criteria, true);
     // 获取位置信息
     // 如果不设置查询要求，getLastKnownLocation方法传人的参数为LocationManager.GPS_PROVIDER
     if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
@@ -526,10 +526,10 @@ public class CollectActivity extends Activity implements View.OnClickListener {
       ActivityCompat.requestPermissions(this, PERMISSIONS_STORAGE, REQUEST_PERMISSION_CODE);
     }
 
-    Location location = lm.getLastKnownLocation(bestProvider);
+    Location location = locationManager.getLastKnownLocation(bestProvider);
     //updateView(location);
     // 监听状态
-    lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 3000, 1, gpsListener);
+    locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 3000, 1, gpsListener);
 
     tempCheck = findViewById(R.id.temperature);
     oriCheck = findViewById(R.id.orientation);
@@ -539,9 +539,9 @@ public class CollectActivity extends Activity implements View.OnClickListener {
     humidCheck = findViewById(R.id.humid);
     gravCheck = findViewById(R.id.gravity);
     gyroCheck = findViewById(R.id.gyro);
-    pressureCheck = findViewById(R.id.pressure);
-    lightCheck = findViewById(R.id.light);
     magCheck = findViewById(R.id.magnet);
+    lightCheck = findViewById(R.id.light);
+    pressureCheck = findViewById(R.id.pressure);
     gpsCheck = findViewById(R.id.gps);
 
     Intent intent = getIntent();
@@ -549,8 +549,8 @@ public class CollectActivity extends Activity implements View.OnClickListener {
     port = intent.getStringExtra(appConstant.PORT_STR);
     user = intent.getStringExtra(appConstant.USERNAME_STR);
     password = intent.getStringExtra(appConstant.PASSWORD_STR);
-    Log.d("ip地址--->", ipAddr);
-    Log.d("端口号--->", port);
+    Log.d("IP 地址 --->", ipAddr);
+    Log.d("端口号 --->", port);
     // 获取电话管理对象
     TelephonyManager mTelephonyManager = (TelephonyManager) this
         .getSystemService(Context.TELEPHONY_SERVICE);
@@ -565,15 +565,17 @@ public class CollectActivity extends Activity implements View.OnClickListener {
     if (mTelephonyManager.getDeviceId() != null) {
       phoneIMEI = mTelephonyManager.getDeviceId();
     } else {
-      phoneIMEI = Settings.Secure.getString(this.getApplicationContext().getContentResolver(), Settings.Secure.ANDROID_ID);
+      phoneIMEI = Settings.Secure
+          .getString(this.getApplicationContext().getContentResolver(), Settings.Secure.ANDROID_ID);
     }
-    Log.d("本机IMEI--->", phoneIMEI);
+    Log.d("本机 IMEI --->", phoneIMEI);
+    // String phoneSerial = Build.SERIAL;
+    // ID : 修订版本列表???
     String phoneID = Build.ID;
-    Log.d("本机ID--->", phoneID);
+    Log.d("本机 ID --->", phoneID);
 
     mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-    SensorManager sManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-    List<Sensor> allSensors = sManager.getSensorList(Sensor.TYPE_ALL);
+    List<Sensor> allSensors = mSensorManager.getSensorList(Sensor.TYPE_ALL);
     for (Sensor sen : allSensors) {
       switch (sen.getType()) {
         case Sensor.TYPE_ACCELEROMETER://加速度传感器
@@ -675,20 +677,20 @@ public class CollectActivity extends Activity implements View.OnClickListener {
     }
     gpsCheck.setChecked(true);
 
-    btn1.setOnClickListener(this);
+    startCollectBtn.setOnClickListener(this);
 
-    btn2.setOnClickListener(new View.OnClickListener() {
+    stopCollectBtn.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View view) {
-        if (btn2.isEnabled()) {
+        if (stopCollectBtn.isEnabled()) {
           if (networkConn == false) {
             Toast.makeText(CollectActivity.this, "请检查网络连接", Toast.LENGTH_SHORT).show();
             //return;
           } else {
-            btn2.setEnabled(false);
-            btn2.setBackgroundResource(R.drawable.shape1);
-            btn1.setEnabled(true);
-            btn1.setBackgroundResource(R.drawable.shape);
+            stopCollectBtn.setEnabled(false);
+            stopCollectBtn.setBackgroundResource(R.drawable.shape1);
+            startCollectBtn.setEnabled(true);
+            startCollectBtn.setBackgroundResource(R.drawable.shape);
             Toast.makeText(CollectActivity.this, "停止采集数据", Toast.LENGTH_SHORT).show();
             endCollect = true;
             mHandler.removeCallbacks(mRunnable);
@@ -700,7 +702,7 @@ public class CollectActivity extends Activity implements View.OnClickListener {
       }
     });
 
-    btn3.setOnClickListener(view -> {
+    viewDataBtn.setOnClickListener(view -> {
       if (networkConn == false) {
         Toast.makeText(CollectActivity.this, "请检查网络连接", Toast.LENGTH_SHORT).show();
         //return;
@@ -728,7 +730,7 @@ public class CollectActivity extends Activity implements View.OnClickListener {
     System.out.println("fuck");
     interval = Integer.parseInt(intervalEdit.getText().toString());
 
-    if (btn1.isEnabled()) {
+    if (startCollectBtn.isEnabled()) {
       if (networkConn) {
         try {
 //                    curTime = df.format(new Date());
@@ -893,10 +895,10 @@ public class CollectActivity extends Activity implements View.OnClickListener {
           e.printStackTrace();
         }
 
-        btn1.setEnabled(false);
-        btn1.setBackgroundResource(R.drawable.shape1);
-        btn2.setEnabled(true);
-        btn2.setBackgroundResource(R.drawable.shape);
+        startCollectBtn.setEnabled(false);
+        startCollectBtn.setBackgroundResource(R.drawable.shape1);
+        stopCollectBtn.setEnabled(true);
+        stopCollectBtn.setBackgroundResource(R.drawable.shape);
         //}else{
         //Toast.makeText(CollectActivity.this, "请检查网络连接", Toast.LENGTH_SHORT).show();
       } else {

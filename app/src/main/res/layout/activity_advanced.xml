@@ -33,7 +33,7 @@
         app:layout_constraintVertical_bias="0.06" />
 
     <Button
-        android:id="@+id/submitAdvSettingConfirmButton"
+        android:id="@+id/submitAdvSettingConfirm"
         android:layout_width="300dp"
         android:layout_height="47dp"
         android:layout_marginStart="8dp"

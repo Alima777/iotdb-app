@@ -199,7 +199,7 @@
         app:layout_constraintVertical_bias="0.131" />
 
     <Button
-        android:id="@+id/b1"
+        android:id="@+id/startCollect"
         android:layout_width="80dp"
         android:layout_height="50dp"
         android:layout_marginTop="8dp"
@@ -214,7 +214,7 @@
         app:layout_constraintVertical_bias="0.855" />
 
     <Button
-        android:id="@+id/b2"
+        android:id="@+id/stopCollect"
         android:layout_width="80dp"
         android:layout_height="50dp"
         android:layout_marginTop="8dp"
@@ -229,7 +229,7 @@
         app:layout_constraintVertical_bias="0.855" />
 
     <Button
-        android:id="@+id/b3"
+        android:id="@+id/viewData"
         android:layout_width="80dp"
         android:layout_height="50dp"
         android:layout_marginTop="8dp"
