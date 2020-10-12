@@ -45,184 +45,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-class RestfulPoint implements Serializable {
-
-  private static final long serialVersionUID = 1L;
-  private String user;
-  private String password;
-  private String imei;
-  private long time;
-  private Map<String, Float> values;
-
-  public RestfulPoint(String user, String password, String imei, long time,
-      Map<String, Float> values) {
-    this.user = user;
-    this.password = password;
-    this.imei = imei;
-    this.time = time;
-    this.values = values;
-  }
-
-  /**
-   * register time series
-   */
-  public static void register(String ip, String port, String param) {
-//        String url = "http://183.173.79.221:8083/api/ios/registerPhone";
-    String url = "http://%s:%s/api/ios/registerPhone";
-    url = String.format(url, ip, port);
-    try {
-//            String response = sendPostEncoded(url, "imei=phone2&sensor=s3&user=gou&password=aaa");
-      String response = sendPostEncoded(url, param);
-      System.out.println(response);
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
-  }
-
-
-  /**
-   * write data point
-   */
-  public static void insertData(String ip, String port, RestfulPoint point) {
-//        Map<String, Float> values = new HashMap<>();
-//        values.put("s3", 0.1f);
-//        RestfulPoint point = new RestfulPoint("gou", "aaa", "phone2", 10L, values);
-//        String url = "http://183.173.79.221:8083/api/ios/addDatum";
-    String urlTmp = "http://%s:%s/api/ios/addDatum";
-    String url = String.format(urlTmp, ip, port);
-    String body = JSON.toJSONString(point);
-
-    try {
-      sendPostJson(url, body);
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
-  }
-
-  private static void sendPostJson(String urls, String body) throws IOException {
-    URL url = new URL(urls);
-    URLConnection connection = url.openConnection();
-    connection.setRequestProperty("accept", "application/json");
-    connection.setRequestProperty("connection", "Keep-Alive");
-    connection.setRequestProperty("Content-Type", "application/json");
-    connection.setRequestProperty("user-agent",
-        "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1;SV1)");
-    connection.setDoInput(true);
-    connection.setDoOutput(true);
-
-    try (PrintWriter out = new PrintWriter(connection.getOutputStream())) {
-      out.print(body);
-      out.flush();
-    }
-
-    try (BufferedReader in = new BufferedReader(
-        new InputStreamReader(connection.getInputStream()))) {
-      StringBuilder result = new StringBuilder();
-      String line;
-      while ((line = in.readLine()) != null) {
-        result.append(line);
-      }
-      System.out.println("responce: " + result);
-    }
-  }
-
-  public static String sendPostEncoded(String url, String param) throws IOException {
-    PrintWriter out = null;
-    BufferedReader in = null;
-    String result = "";
-    try {
-      URL realUrl = new URL(url);
-      // 打开和URL之间的连接
-      URLConnection conn = realUrl.openConnection();
-      // 设置通用的请求属性
-      conn.setRequestProperty("accept", "*/*");
-      conn.setRequestProperty("connection", "Keep-Alive");
-      conn.setRequestProperty("user-agent",
-          "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1;SV1)");
-      // 发送POST请求必须设置如下两行
-      conn.setDoOutput(true);
-      conn.setDoInput(true);
-      // 获取URLConnection对象对应的输出流
-      out = new PrintWriter(conn.getOutputStream());
-      // 发送请求参数
-      if (param != null) {
-        out.print(param);
-      }
-      // flush输出流的缓冲
-      out.flush();
-      // 定义BufferedReader输入流来读取URL的响应
-      in = new BufferedReader(
-          new InputStreamReader(conn.getInputStream()));
-      String line;
-      while ((line = in.readLine()) != null) {
-        result += line;
-      }
-    } catch (Exception e) {
-      throw e;
-    }
-    //使用finally块来关闭输出流、输入流
-    finally {
-      try {
-        if (out != null) {
-          out.close();
-        }
-        if (in != null) {
-          in.close();
-        }
-      } catch (IOException e) {
-        throw e;
-      }
-    }
-    return result;
-  }
-
-  public String getUser() {
-    return user;
-  }
-
-  public void setUser(String user) {
-    this.user = user;
-  }
-
-  public String getPassword() {
-    return password;
-  }
-
-  public void setPassword(String password) {
-    this.password = password;
-  }
-
-  public String getImei() {
-    return imei;
-  }
-
-  public void setImei(String imei) {
-    this.imei = imei;
-  }
-
-  public long getTime() {
-    return time;
-  }
-
-  public void setTime(long time) {
-    this.time = time;
-  }
-
-  public Map<String, Float> getValues() {
-    return values;
-  }
-
-  public void setValues(Map<String, Float> values) {
-    this.values = values;
-  }
-}
-
 public class CollectActivity extends Activity implements View.OnClickListener {
 
   //    private SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");//设置日期格式
   //    private String curTime = df.format(new Date());
   private long curTime = System.currentTimeMillis();
-  private IntentFilter intentFilter;
   private MyBroadcastReceiver myBroadcastReceiver;
   private int interval;
 
@@ -249,7 +76,7 @@ public class CollectActivity extends Activity implements View.OnClickListener {
   private float pressureValue = 0;
   private float lightValue = 0;
 
-  private boolean temp = false;
+  private boolean enableTemperature = false;
   private boolean ori = false;
   private boolean acce = false;
   private boolean step = false;
@@ -287,13 +114,12 @@ public class CollectActivity extends Activity implements View.OnClickListener {
   private Handler mHandler = new Handler();
   private Runnable mRunnable;
 
-  private LocationManager locationManager;
-
   private boolean networkConn;
   private boolean createOrNot = true;
 
   private SensorManager mSensorManager;
   private String phoneIMEI;
+
   private SensorEventListener temperatureListener = new SensorEventListener() {
     @Override
     public void onSensorChanged(SensorEvent event) {
@@ -307,6 +133,7 @@ public class CollectActivity extends Activity implements View.OnClickListener {
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
     }
   };
+
   private SensorEventListener acceleratorListener = new SensorEventListener() {
     @Override
     public void onSensorChanged(SensorEvent event) {
@@ -328,6 +155,7 @@ public class CollectActivity extends Activity implements View.OnClickListener {
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
     }
   };
+
   private SensorEventListener orientationListener = new SensorEventListener() {
     @Override
     public void onSensorChanged(SensorEvent event) {
@@ -341,6 +169,7 @@ public class CollectActivity extends Activity implements View.OnClickListener {
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
     }
   };
+
   private SensorEventListener stepListener = new SensorEventListener() {
     @Override
     public void onSensorChanged(SensorEvent event) {
@@ -354,6 +183,7 @@ public class CollectActivity extends Activity implements View.OnClickListener {
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
     }
   };
+
   private SensorEventListener heartRateListener = new SensorEventListener() {
     @Override
     public void onSensorChanged(SensorEvent event) {
@@ -367,6 +197,7 @@ public class CollectActivity extends Activity implements View.OnClickListener {
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
     }
   };
+
   private SensorEventListener humidListener = new SensorEventListener() {
     @Override
     public void onSensorChanged(SensorEvent event) {
@@ -380,6 +211,7 @@ public class CollectActivity extends Activity implements View.OnClickListener {
 
     }
   };
+
   private SensorEventListener gravityListener = new SensorEventListener() {
     @Override
     public void onSensorChanged(SensorEvent event) {
@@ -401,6 +233,7 @@ public class CollectActivity extends Activity implements View.OnClickListener {
 
     }
   };
+
   private SensorEventListener gyroListener = new SensorEventListener() {
     @Override
     public void onSensorChanged(SensorEvent event) {
@@ -415,6 +248,7 @@ public class CollectActivity extends Activity implements View.OnClickListener {
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
     }
   };
+
   private SensorEventListener magnetListener = new SensorEventListener() {
     @Override
     public void onSensorChanged(SensorEvent event) {
@@ -429,6 +263,7 @@ public class CollectActivity extends Activity implements View.OnClickListener {
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
     }
   };
+
   private SensorEventListener lightListener = new SensorEventListener() {
     @Override
     public void onSensorChanged(SensorEvent event) {
@@ -441,6 +276,7 @@ public class CollectActivity extends Activity implements View.OnClickListener {
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
     }
   };
+
   private SensorEventListener pressureListener = new SensorEventListener() {
     @Override
     public void onSensorChanged(SensorEvent event) {
@@ -453,6 +289,7 @@ public class CollectActivity extends Activity implements View.OnClickListener {
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
     }
   };
+
   private LocationListener gpsListener = new LocationListener() {
 
     /**
@@ -493,7 +330,7 @@ public class CollectActivity extends Activity implements View.OnClickListener {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_collect);
 
-    intentFilter = new IntentFilter();
+    IntentFilter intentFilter = new IntentFilter();
     intentFilter.addAction("android.net.conn.CONNECTIVITY_CHANGE");
     myBroadcastReceiver = new MyBroadcastReceiver();
     registerReceiver(myBroadcastReceiver, intentFilter);
@@ -504,7 +341,7 @@ public class CollectActivity extends Activity implements View.OnClickListener {
     stopCollectBtn.setEnabled(false);
     stopCollectBtn.setBackgroundResource(R.drawable.shape1);
 
-    locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+    LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
     Criteria criteria = new Criteria();
     criteria.setAccuracy(Criteria.ACCURACY_FINE);  //高精度
     criteria.setAltitudeRequired(true);  //包含高度信息
@@ -555,13 +392,6 @@ public class CollectActivity extends Activity implements View.OnClickListener {
     TelephonyManager mTelephonyManager = (TelephonyManager) this
         .getSystemService(Context.TELEPHONY_SERVICE);
 
-//        String[] PERMISSIONS_STORAGE = {
-//                Manifest.permission.READ_PHONE_STATE
-//        };
-//        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
-//            ActivityCompat.requestPermissions(this, PERMISSIONS_STORAGE, REQUEST_PERMISSION_CODE);
-//        }
-
     if (mTelephonyManager.getDeviceId() != null) {
       phoneIMEI = mTelephonyManager.getDeviceId();
     } else {
@@ -586,7 +416,7 @@ public class CollectActivity extends Activity implements View.OnClickListener {
           step = true;
           stepCheck.setChecked(true);
           break;
-        case Sensor.TYPE_ORIENTATION://
+        case Sensor.TYPE_ORIENTATION:// 方向
           ori = true;
           oriCheck.setChecked(true);
           break;
@@ -594,15 +424,15 @@ public class CollectActivity extends Activity implements View.OnClickListener {
           hrate = true;
           hrateCheck.setChecked(true);
           break;
-        case Sensor.TYPE_RELATIVE_HUMIDITY:
+        case Sensor.TYPE_RELATIVE_HUMIDITY: // 相对湿度
           humid = true;
           humidCheck.setChecked(true);
           break;
-        case Sensor.TYPE_AMBIENT_TEMPERATURE:
-          temp = true;
+        case Sensor.TYPE_AMBIENT_TEMPERATURE: // 环境温度
+          enableTemperature = true;
           tempCheck.setChecked(true);
           break;
-        case Sensor.TYPE_GRAVITY:
+        case Sensor.TYPE_GRAVITY: // 重力
           grav = true;
           gravCheck.setChecked(true);
           break;
@@ -618,7 +448,7 @@ public class CollectActivity extends Activity implements View.OnClickListener {
           pressure = true;
           pressureCheck.setChecked(true);
           break;
-        case Sensor.TYPE_MAGNETIC_FIELD:
+        case Sensor.TYPE_MAGNETIC_FIELD:  // 磁场
           mag = true;
           magCheck.setChecked(true);
           break;
@@ -631,7 +461,7 @@ public class CollectActivity extends Activity implements View.OnClickListener {
       acceCheck.setClickable(false);
       acceCheck.setEnabled(false);
     }
-    if (!temp) {
+    if (!enableTemperature) {
       tempCheck.setClickable(false);
       tempCheck.setEnabled(false);
     }
@@ -679,31 +509,26 @@ public class CollectActivity extends Activity implements View.OnClickListener {
 
     startCollectBtn.setOnClickListener(this);
 
-    stopCollectBtn.setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(View view) {
-        if (stopCollectBtn.isEnabled()) {
-          if (networkConn == false) {
-            Toast.makeText(CollectActivity.this, "请检查网络连接", Toast.LENGTH_SHORT).show();
-            //return;
-          } else {
-            stopCollectBtn.setEnabled(false);
-            stopCollectBtn.setBackgroundResource(R.drawable.shape1);
-            startCollectBtn.setEnabled(true);
-            startCollectBtn.setBackgroundResource(R.drawable.shape);
-            Toast.makeText(CollectActivity.this, "停止采集数据", Toast.LENGTH_SHORT).show();
-            endCollect = true;
-            mHandler.removeCallbacks(mRunnable);
-            Log.d("停止", endCollect ? "yes" : "no");
-          }
+    stopCollectBtn.setOnClickListener(view -> {
+      if (stopCollectBtn.isEnabled()) {
+        if (!networkConn) {
+          Toast.makeText(CollectActivity.this, "请检查网络连接", Toast.LENGTH_SHORT).show();
+          //return;
         } else {
-
+          stopCollectBtn.setEnabled(false);
+          stopCollectBtn.setBackgroundResource(R.drawable.shape1);
+          startCollectBtn.setEnabled(true);
+          startCollectBtn.setBackgroundResource(R.drawable.shape);
+          Toast.makeText(CollectActivity.this, "停止采集数据", Toast.LENGTH_SHORT).show();
+          endCollect = true;
+          mHandler.removeCallbacks(mRunnable);
+          Log.d("停止", endCollect ? "yes" : "no");
         }
       }
     });
 
     viewDataBtn.setOnClickListener(view -> {
-      if (networkConn == false) {
+      if (!networkConn) {
         Toast.makeText(CollectActivity.this, "请检查网络连接", Toast.LENGTH_SHORT).show();
         //return;
       } else {
@@ -724,188 +549,126 @@ public class CollectActivity extends Activity implements View.OnClickListener {
   @Override
   public void onClick(View v) {
     endCollect = false;
-    //InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-    //imm.hideSoftInputFromWindow(userEdit.getWindowToken(), 0);
-    EditText intervalEdit = (EditText) findViewById(R.id.interval);
-    System.out.println("fuck");
+    EditText intervalEdit = findViewById(R.id.interval);
     interval = Integer.parseInt(intervalEdit.getText().toString());
 
     if (startCollectBtn.isEnabled()) {
       if (networkConn) {
-        try {
-//                    curTime = df.format(new Date());
-          //mHandler = new Handler();
-          mHandler.post(mRunnable = new Runnable() {
-            @Override
-            public void run() {
-              try {
-                if (createOrNot) {
-                  try {
-//                                    statement.execute("select * from root.android.p" + phoneIMEI);
-                    initial();
-                    createOrNot = false;
-                  } catch (Exception e) {
-                    e.printStackTrace();
-                  }
-                }
-                curTime = System.currentTimeMillis();
-                /**
-                 * Map<String, Float> values = new HashMap<>();
-                 * values.put("s3", 0.1f);
-                 * RestfulPoint point = new RestfulPoint("gou", "aaa", "phone2", 10L, values);
-                 */
-                if (tempCheck.isChecked()) {
-//                                    temperatureSql = "insert into root.android.p" + phoneIMEI + " (timestamp,temperature) values(" + curTime + "," + tempValue + ")";
-//                                    statement.execute(temperatureSql);
-                  Map<String, Float> values = new HashMap<>();
-                  values.put("temperature", tempValue);
-                  RestfulPoint point = new RestfulPoint(user, password, phoneIMEI, curTime, values);
-                  RestfulPoint.insertData(ipAddr, port, point);
-                }
-                if (acceCheck.isChecked()) {
-//                                    acceleratorSql = "insert into root.android.p" + phoneIMEI + " (timestamp,accelerometer,accelerometer_y,accelerometer_z) values(" + curTime + "," + acceValue.get(0) + "," + acceValue.get(1) + "," + acceValue.get(2) + ")";
-//                                    statement.execute(acceleratorSql);
-                  Map<String, Float> values = new HashMap<>();
-                  values.put("accelerometer", acceValue.get(0));
-                  values.put("accelerometer_y", acceValue.get(1));
-                  values.put("accelerometer_z", acceValue.get(2));
-                  RestfulPoint point = new RestfulPoint(user, password, phoneIMEI, curTime, values);
-                  RestfulPoint.insertData(ipAddr, port, point);
-                }
-                if (oriCheck.isChecked()) {
-//                                    orientationSql = "insert into root.android.p" + phoneIMEI + " (timestamp,orient_x,orient_y,orient_z) values(" + curTime + "," + oriValue.get(0) + "," + oriValue.get(1) + "," + oriValue.get(2) + ")";
-//                                    statement.execute(orientationSql);
-                  Map<String, Float> values = new HashMap<>();
-                  values.put("orient_x", oriValue.get(0));
-                  values.put("orient_y", oriValue.get(1));
-                  values.put("orient_z", oriValue.get(2));
-                  RestfulPoint point = new RestfulPoint(user, password, phoneIMEI, curTime, values);
-                  RestfulPoint.insertData(ipAddr, port, point);
-                }
-                if (stepCheck.isChecked()) {
-//                                    stepSql = "insert into root.android.p" + phoneIMEI + " (timestamp,step) values(" + curTime + "," + stepValue + ")";
-//                                    statement.execute(stepSql);
-                  Map<String, Float> values = new HashMap<>();
-                  values.put("step", stepValue);
-                  RestfulPoint point = new RestfulPoint(user, password, phoneIMEI, curTime, values);
-                  RestfulPoint.insertData(ipAddr, port, point);
-                }
-                if (humidCheck.isChecked()) {
-//                                    humidSql = "insert into root.android.p" + phoneIMEI + " (timestamp,humid) values(" + curTime + "," + humidValue + ")";
-//                                    statement.execute(humidSql);
-                  Map<String, Float> values = new HashMap<>();
-                  values.put("humid", humidValue);
-                  RestfulPoint point = new RestfulPoint(user, password, phoneIMEI, curTime, values);
-                  RestfulPoint.insertData(ipAddr, port, point);
-                }
-                if (hrateCheck.isChecked()) {
-//                                    heartRateSql = "insert into root.android.p" + phoneIMEI + " (timestamp,heartrate) values(" + curTime + "," + hrateValue + ")";
-//                                    statement.execute(heartRateSql);
-                  Map<String, Float> values = new HashMap<>();
-                  values.put("heartrate", hrateValue);
-                  RestfulPoint point = new RestfulPoint(user, password, phoneIMEI, curTime, values);
-                  RestfulPoint.insertData(ipAddr, port, point);
-                }
-                if (gyroCheck.isChecked()) {
-//                                    gyroSql = "insert into root.android.p" + phoneIMEI + " (timestamp,gyro_x,gyro_y,gyro_z) values(" + curTime + "," + gyroValue.get(0) + "," + gyroValue.get(1) + "," + gyroValue.get(2) + ")";
-//                                    statement.execute(gyroSql);
-                  Map<String, Float> values = new HashMap<>();
-                  values.put("gyro_x", gyroValue.get(0));
-                  values.put("gyro_y", gyroValue.get(1));
-                  values.put("gyro_z", gyroValue.get(2));
-                  RestfulPoint point = new RestfulPoint(user, password, phoneIMEI, curTime, values);
-                  RestfulPoint.insertData(ipAddr, port, point);
-                }
-                if (gravCheck.isChecked()) {
-//                                    gravitySql = "insert into root.android.p" + phoneIMEI + " (timestamp,gravity_x,gravity_y,gravity_z) values(" + curTime + "," + gravValue.get(0) + "," + gravValue.get(1) + "," + gravValue.get(2) + ")";
-//                                    statement.execute(gravitySql);
-                  Map<String, Float> values = new HashMap<>();
-                  values.put("gravity_x", gravValue.get(0));
-                  values.put("gravity_y", gravValue.get(1));
-                  values.put("gravity_z", gravValue.get(2));
-                  RestfulPoint point = new RestfulPoint(user, password, phoneIMEI, curTime, values);
-                  RestfulPoint.insertData(ipAddr, port, point);
-                }
-                if (lightCheck.isChecked()) {
-//                                    lightSql = "insert into root.android.p" + phoneIMEI + " (timestamp,light) values(" + curTime + "," + lightValue + ")";
-//                                    statement.execute(lightSql);
-                  Map<String, Float> values = new HashMap<>();
-                  values.put("light", lightValue);
-                  RestfulPoint point = new RestfulPoint(user, password, phoneIMEI, curTime, values);
-                  RestfulPoint.insertData(ipAddr, port, point);
-                }
-                if (pressureCheck.isChecked()) {
-//                                    pressureSql = "insert into root.android.p" + phoneIMEI + " (timestamp,pressure) values(" + curTime + "," + pressureValue + ")";
-//                                    statement.execute(pressureSql);
-                  Map<String, Float> values = new HashMap<>();
-                  values.put("pressure", pressureValue);
-                  RestfulPoint point = new RestfulPoint(user, password, phoneIMEI, curTime, values);
-                  RestfulPoint.insertData(ipAddr, port, point);
-                }
-                if (magCheck.isChecked()) {
-//                                    magnetSql = "insert into root.android.p" + phoneIMEI + " (timestamp,magnet_x,magnet_y,magnet_z) values(" + curTime + "," + magValue.get(0) + "," + magValue.get(1) + "," + magValue.get(2) + ")";
-//                                    statement.execute(magnetSql);
-                  Map<String, Float> values = new HashMap<>();
-                  values.put("magnet_x", magValue.get(0));
-                  values.put("magnet_y", magValue.get(1));
-                  values.put("magnet_z", magValue.get(2));
-                  RestfulPoint point = new RestfulPoint(user, password, phoneIMEI, curTime, values);
-                  RestfulPoint.insertData(ipAddr, port, point);
-                }
-                if (gpsCheck.isChecked()) {
-//                                    gpsSql = "insert into root.android.p" + phoneIMEI + " (timestamp,longitude,latitude,altitude) values(" + curTime + "," + gpsValue.get(0) + "," + gpsValue.get(1) + "," + gpsValue.get(2) + ")";
-//                                    statement.execute(gpsSql);
-                  Map<String, Float> values = new HashMap<>();
-                  double gps0 = gpsValue.get(0);
-                  double gps1 = gpsValue.get(1);
-                  double gps2 = gpsValue.get(2);
-                  values.put("longitude", (float) gps0);
-                  values.put("latitude", (float) gps1);
-                  values.put("altitude", (float) gps2);
-                  RestfulPoint point = new RestfulPoint(user, password, phoneIMEI, curTime, values);
-                  RestfulPoint.insertData(ipAddr, port, point);
-                        /*
-                        // 判断GPS是否正常启动
-                        if (!lm.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-                            Toast.makeText(CollectActivity.this, "请开启GPS导航...", Toast.LENGTH_SHORT).show();
-                            // 返回开启GPS导航设置界面
-                            Intent intent1 = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-                            startActivityForResult(intent1, 0);
-                            return;
-                        }else{
-                            statement.execute(gpsSql);
-                        }*/
-                }
-                //sleep(3000);
-
-              } catch (Exception e) {
-                e.printStackTrace();
-                //Toast.makeText(CollectActivity.this,e.toString(),Toast.LENGTH_SHORT).show();
-                //Intent intent = new Intent(CollectActivity.this, MainActivity.class);
-                //startActivity(intent);
-                //return;
-              }
-              mHandler.postDelayed(this, interval);
-//                            curTime = System.currentTimeMillis();
-//                            curTime = df.format(new Date());
+        mHandler.post(mRunnable = new Runnable() {
+          @Override
+          public void run() {
+            if (createOrNot) {
+              initialTimeSeriesInfo();
+              createOrNot = false;
             }
-          });
-          Toast.makeText(CollectActivity.this, "开始采集数据", Toast.LENGTH_SHORT).show();
-        } catch (Exception e) {
-          e.printStackTrace();
-        }
-
-        startCollectBtn.setEnabled(false);
-        startCollectBtn.setBackgroundResource(R.drawable.shape1);
-        stopCollectBtn.setEnabled(true);
-        stopCollectBtn.setBackgroundResource(R.drawable.shape);
-        //}else{
-        //Toast.makeText(CollectActivity.this, "请检查网络连接", Toast.LENGTH_SHORT).show();
-      } else {
-        Toast.makeText(CollectActivity.this, "请检查网络连接", Toast.LENGTH_SHORT).show();
+            curTime = System.currentTimeMillis();
+            /**
+             * Map<String, Float> values = new HashMap<>();
+             * values.put("s3", 0.1f);
+             * RestfulPoint point = new RestfulPoint("gou", "aaa", "phone2", 10L, values);
+             */
+            if (tempCheck.isChecked()) {
+              Map<String, Float> values = new HashMap<>();
+              values.put("temperature", tempValue);
+              RestfulPoint point = new RestfulPoint(user, password, phoneIMEI, curTime, values);
+              RestfulPoint.insertData(ipAddr, port, point);
+            }
+            if (acceCheck.isChecked()) {
+              Map<String, Float> values = new HashMap<>();
+              values.put("accelerometer", acceValue.get(0));
+              values.put("accelerometer_y", acceValue.get(1));
+              values.put("accelerometer_z", acceValue.get(2));
+              RestfulPoint point = new RestfulPoint(user, password, phoneIMEI, curTime, values);
+              RestfulPoint.insertData(ipAddr, port, point);
+            }
+            if (oriCheck.isChecked()) {
+              Map<String, Float> values = new HashMap<>();
+              values.put("orient_x", oriValue.get(0));
+              values.put("orient_y", oriValue.get(1));
+              values.put("orient_z", oriValue.get(2));
+              RestfulPoint point = new RestfulPoint(user, password, phoneIMEI, curTime, values);
+              RestfulPoint.insertData(ipAddr, port, point);
+            }
+            if (stepCheck.isChecked()) {
+              Map<String, Float> values = new HashMap<>();
+              values.put("step", stepValue);
+              RestfulPoint point = new RestfulPoint(user, password, phoneIMEI, curTime, values);
+              RestfulPoint.insertData(ipAddr, port, point);
+            }
+            if (humidCheck.isChecked()) {
+              Map<String, Float> values = new HashMap<>();
+              values.put("humid", humidValue);
+              RestfulPoint point = new RestfulPoint(user, password, phoneIMEI, curTime, values);
+              RestfulPoint.insertData(ipAddr, port, point);
+            }
+            if (hrateCheck.isChecked()) {
+              Map<String, Float> values = new HashMap<>();
+              values.put("heartrate", hrateValue);
+              RestfulPoint point = new RestfulPoint(user, password, phoneIMEI, curTime, values);
+              RestfulPoint.insertData(ipAddr, port, point);
+            }
+            if (gyroCheck.isChecked()) {
+              Map<String, Float> values = new HashMap<>();
+              values.put("gyro_x", gyroValue.get(0));
+              values.put("gyro_y", gyroValue.get(1));
+              values.put("gyro_z", gyroValue.get(2));
+              RestfulPoint point = new RestfulPoint(user, password, phoneIMEI, curTime, values);
+              RestfulPoint.insertData(ipAddr, port, point);
+            }
+            if (gravCheck.isChecked()) {
+              Map<String, Float> values = new HashMap<>();
+              values.put("gravity_x", gravValue.get(0));
+              values.put("gravity_y", gravValue.get(1));
+              values.put("gravity_z", gravValue.get(2));
+              RestfulPoint point = new RestfulPoint(user, password, phoneIMEI, curTime, values);
+              RestfulPoint.insertData(ipAddr, port, point);
+            }
+            if (lightCheck.isChecked()) {
+              Map<String, Float> values = new HashMap<>();
+              values.put("light", lightValue);
+              RestfulPoint point = new RestfulPoint(user, password, phoneIMEI, curTime, values);
+              RestfulPoint.insertData(ipAddr, port, point);
+            }
+            if (pressureCheck.isChecked()) {
+              Map<String, Float> values = new HashMap<>();
+              values.put("pressure", pressureValue);
+              RestfulPoint point = new RestfulPoint(user, password, phoneIMEI, curTime, values);
+              RestfulPoint.insertData(ipAddr, port, point);
+            }
+            if (magCheck.isChecked()) {
+              Map<String, Float> values = new HashMap<>();
+              values.put("magnet_x", magValue.get(0));
+              values.put("magnet_y", magValue.get(1));
+              values.put("magnet_z", magValue.get(2));
+              RestfulPoint point = new RestfulPoint(user, password, phoneIMEI, curTime, values);
+              RestfulPoint.insertData(ipAddr, port, point);
+            }
+            if (gpsCheck.isChecked()) {
+              Map<String, Float> values = new HashMap<>();
+              double gps0 = gpsValue.get(0);
+              double gps1 = gpsValue.get(1);
+              double gps2 = gpsValue.get(2);
+              values.put("longitude", (float) gps0);
+              values.put("latitude", (float) gps1);
+              values.put("altitude", (float) gps2);
+              RestfulPoint point = new RestfulPoint(user, password, phoneIMEI, curTime, values);
+              RestfulPoint.insertData(ipAddr, port, point);
+            }
+            mHandler.postDelayed(this, interval);
+          }
+        });
+        Toast.makeText(CollectActivity.this, "开始采集数据", Toast.LENGTH_SHORT).show();
       }
+
+      startCollectBtn.setEnabled(false);
+      startCollectBtn.setBackgroundResource(R.drawable.shape1);
+      stopCollectBtn.setEnabled(true);
+      stopCollectBtn.setBackgroundResource(R.drawable.shape);
+    } else {
+      Toast.makeText(CollectActivity.this, "请检查网络连接", Toast.LENGTH_SHORT).show();
     }
   }
+
 
   @Override
   protected void onResume() {
@@ -917,7 +680,7 @@ public class CollectActivity extends Activity implements View.OnClickListener {
           SensorManager.SENSOR_DELAY_GAME);
     }
     // 为温度传感器注册监听器
-    if (temp) {
+    if (enableTemperature) {
       mSensorManager.registerListener(temperatureListener,
           mSensorManager.getDefaultSensor(Sensor.TYPE_AMBIENT_TEMPERATURE),
           SensorManager.SENSOR_DELAY_GAME);
@@ -984,7 +747,7 @@ public class CollectActivity extends Activity implements View.OnClickListener {
   protected void onStop() {
     super.onStop();
     // 取消监听
-    if (temp) {
+    if (enableTemperature) {
       mSensorManager.unregisterListener(temperatureListener);
     }
     if (acce) {
@@ -1025,26 +788,19 @@ public class CollectActivity extends Activity implements View.OnClickListener {
     unregisterReceiver(myBroadcastReceiver);
   }
 
-  public void initial() {
+  public void initialTimeSeriesInfo() {
     /**
      * imei=phone2&sensor=s3&user=gou&password=aaa
      */
     String tmpString = "imei=%s&sensor=%s&user=%s&password=%s";
 
     System.out.println("initial here!!!");
-    if (temp) {
-//            String createTem = "create timeseries root.android.p" + phoneIMEI + ".temperature with datatype=DOUBLE,encoding=GORILLA";
-//            statement.execute(createTem);  //创建时间序列
+    // 创建时间序列
+    if (enableTemperature) {
       String param = String.format(tmpString, phoneIMEI, "temperature", user, password);
       RestfulPoint.register(ipAddr, port, param);
     }
     if (acce) {
-//            String createAcceX = "create timeseries root.android.p" + phoneIMEI + ".accelerometer with datatype=DOUBLE,encoding=GORILLA";
-//            statement.execute(createAcceX);  //创建时间序列
-//            String createAcceY = "create timeseries root.android.p" + phoneIMEI + ".accelerometer_y with datatype=DOUBLE,encoding=GORILLA";
-//            statement.execute(createAcceY);  //创建时间序列
-//            String createAcceZ = "create timeseries root.android.p" + phoneIMEI + ".accelerometer_z with datatype=DOUBLE,encoding=GORILLA";
-//            statement.execute(createAcceZ);  //创建时间序列
       String param = String.format(tmpString, phoneIMEI, "accelerometer", user, password);
       RestfulPoint.register(ipAddr, port, param);
       String param1 = String.format(tmpString, phoneIMEI, "accelerometer_y", user, password);
@@ -1053,12 +809,6 @@ public class CollectActivity extends Activity implements View.OnClickListener {
       RestfulPoint.register(ipAddr, port, param2);
     }
     if (ori) {
-//            String createOriX = "create timeseries root.android.p" + phoneIMEI + ".orient_x with datatype=DOUBLE,encoding=GORILLA";
-//            statement.execute(createOriX);  //创建时间序列
-//            String createOriY = "create timeseries root.android.p" + phoneIMEI + ".orient_y with datatype=DOUBLE,encoding=GORILLA";
-//            statement.execute(createOriY);  //创建时间序列
-//            String createOriZ = "create timeseries root.android.p" + phoneIMEI + ".orient_z with datatype=DOUBLE,encoding=GORILLA";
-//            statement.execute(createOriZ);  //创建时间序列
       String param = String.format(tmpString, phoneIMEI, "orient_x", user, password);
       RestfulPoint.register(ipAddr, port, param);
       String param1 = String.format(tmpString, phoneIMEI, "orient_y", user, password);
@@ -1067,30 +817,18 @@ public class CollectActivity extends Activity implements View.OnClickListener {
       RestfulPoint.register(ipAddr, port, param2);
     }
     if (step) {
-//            String stepCount = "create timeseries root.android.p" + phoneIMEI + ".step with datatype=DOUBLE,encoding=GORILLA";
-//            statement.execute(stepCount);  //创建时间序列
       String param = String.format(tmpString, phoneIMEI, "step", user, password);
       RestfulPoint.register(ipAddr, port, param);
     }
     if (hrate) {
-//            String heartRate = "create timeseries root.android.p" + phoneIMEI + ".heartrate with datatype=DOUBLE,encoding=GORILLA";
-//            statement.execute(heartRate);  //创建时间序列
       String param = String.format(tmpString, phoneIMEI, "heartrate", user, password);
       RestfulPoint.register(ipAddr, port, param);
     }
     if (humid) {
-//            String humidity = "create timeseries root.android.p" + phoneIMEI + ".humid with datatype=DOUBLE,encoding=GORILLA";
-//            statement.execute(humidity);  //创建时间序列
       String param = String.format(tmpString, phoneIMEI, "humid", user, password);
       RestfulPoint.register(ipAddr, port, param);
     }
     if (grav) {
-//            String gravX = "create timeseries root.android.p" + phoneIMEI + ".gravity_x with datatype=DOUBLE,encoding=GORILLA";
-//            statement.execute(gravX);  //创建时间序列
-//            String gravY = "create timeseries root.android.p" + phoneIMEI + ".gravity_y with datatype=DOUBLE,encoding=GORILLA";
-//            statement.execute(gravY);  //创建时间序列
-//            String gravZ = "create timeseries root.android.p" + phoneIMEI + ".gravity_z with datatype=DOUBLE,encoding=GORILLA";
-//            statement.execute(gravZ);  //创建时间序列
       String param = String.format(tmpString, phoneIMEI, "gravity_x", user, password);
       RestfulPoint.register(ipAddr, port, param);
       String param1 = String.format(tmpString, phoneIMEI, "gravity_y", user, password);
@@ -1099,12 +837,6 @@ public class CollectActivity extends Activity implements View.OnClickListener {
       RestfulPoint.register(ipAddr, port, param2);
     }
     if (gyro) {
-//            String gyroX = "create timeseries root.android.p" + phoneIMEI + ".gyro_x with datatype=DOUBLE,encoding=GORILLA";
-//            statement.execute(gyroX);  //创建时间序列
-//            String gyroY = "create timeseries root.android.p" + phoneIMEI + ".gyro_y with datatype=DOUBLE,encoding=GORILLA";
-//            statement.execute(gyroY);  //创建时间序列
-//            String gyroZ = "create timeseries root.android.p" + phoneIMEI + ".gyro_z with datatype=DOUBLE,encoding=GORILLA";
-//            statement.execute(gyroZ);  //创建时间序列
       String param = String.format(tmpString, phoneIMEI, "gyro_x", user, password);
       RestfulPoint.register(ipAddr, port, param);
       String param1 = String.format(tmpString, phoneIMEI, "gyro_y", user, password);
@@ -1113,24 +845,14 @@ public class CollectActivity extends Activity implements View.OnClickListener {
       RestfulPoint.register(ipAddr, port, param2);
     }
     if (pressure) {
-//            String press = "create timeseries root.android.p" + phoneIMEI + ".pressure with datatype=DOUBLE,encoding=GORILLA";
-//            statement.execute(press);  //创建时间序列
       String param = String.format(tmpString, phoneIMEI, "pressure", user, password);
       RestfulPoint.register(ipAddr, port, param);
     }
     if (light) {
-//            String createLight = "create timeseries root.android.p" + phoneIMEI + ".light with datatype=DOUBLE,encoding=GORILLA";
-//            statement.execute(createLight);  //创建时间序列
       String param = String.format(tmpString, phoneIMEI, "light", user, password);
       RestfulPoint.register(ipAddr, port, param);
     }
     if (mag) {
-//            String magX = "create timeseries root.android.p" + phoneIMEI + ".magnet_x with datatype=DOUBLE,encoding=GORILLA";
-//            statement.execute(magX);  //创建时间序列
-//            String magY = "create timeseries root.android.p" + phoneIMEI + ".magnet_y with datatype=DOUBLE,encoding=GORILLA";
-//            statement.execute(magY);  //创建时间序列
-//            String magZ = "create timeseries root.android.p" + phoneIMEI + ".magnet_z with datatype=DOUBLE,encoding=GORILLA";
-//            statement.execute(magZ);  //创建时间序列
       String param = String.format(tmpString, phoneIMEI, "magnet_x", user, password);
       RestfulPoint.register(ipAddr, port, param);
       String param1 = String.format(tmpString, phoneIMEI, "magnet_y", user, password);
@@ -1138,12 +860,6 @@ public class CollectActivity extends Activity implements View.OnClickListener {
       String param2 = String.format(tmpString, phoneIMEI, "magnet_z", user, password);
       RestfulPoint.register(ipAddr, port, param2);
     }
-//        String gps_longitude = "create timeseries root.android.p" + phoneIMEI + ".longitude with datatype=DOUBLE,encoding=GORILLA";
-//        statement.execute(gps_longitude);
-//        String gps_latitude = "create timeseries root.android.p" + phoneIMEI + ".latitude with datatype=DOUBLE,encoding=GORILLA";
-//        statement.execute(gps_latitude);
-//        String gps_altitude = "create timeseries root.android.p" + phoneIMEI + ".altitude with datatype=DOUBLE,encoding=GORILLA";
-//        statement.execute(gps_altitude);
     String param = String.format(tmpString, phoneIMEI, "longitude", user, password);
     RestfulPoint.register(ipAddr, port, param);
     String param1 = String.format(tmpString, phoneIMEI, "latitude", user, password);
@@ -1152,7 +868,7 @@ public class CollectActivity extends Activity implements View.OnClickListener {
     RestfulPoint.register(ipAddr, port, param2);
   }
 
-  public static final boolean isOPen(final Context context) {
+  public static boolean isOPen(final Context context) {
     LocationManager locationManager
         = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
     // 通过GPS卫星定位，定位级别可以精确到街（通过24颗卫星定位，在室外和空旷的地方定位准确、速度快）
@@ -1165,7 +881,7 @@ public class CollectActivity extends Activity implements View.OnClickListener {
     return false;
   }
 
-  public static final void openGPS(Context context) {
+  public static void openGPS(Context context) {
     Intent GPSIntent = new Intent();
     GPSIntent.setClassName("com.android.settings",
         "com.android.settings.widget.SettingsAppWidgetProvider");
@@ -1174,6 +890,7 @@ public class CollectActivity extends Activity implements View.OnClickListener {
     try {
       PendingIntent.getBroadcast(context, 0, GPSIntent, 0).send();
     } catch (PendingIntent.CanceledException e) {
+      Log.d("Error while opening GPS", e.getMessage());
       e.printStackTrace();
     }
   }
@@ -1193,6 +910,122 @@ public class CollectActivity extends Activity implements View.OnClickListener {
         networkConn = false;
       }
     }
+  }
+}
+
+
+class RestfulPoint implements Serializable {
+
+  private static final long serialVersionUID = 1L;
+  private String user;
+  private String password;
+  private String IMEI;
+  private long time;
+  private Map<String, Float> values;
+
+  public RestfulPoint(String user, String password, String IMEI, long time,
+      Map<String, Float> values) {
+    this.user = user;
+    this.password = password;
+    this.IMEI = IMEI;
+    this.time = time;
+    this.values = values;
+  }
+
+  /**
+   * write data point
+   */
+  public static void insertData(String ip, String port, RestfulPoint point) {
+    String urlTmp = "http://%s:%s/api/ios/addDatum";
+    String url = String.format(urlTmp, ip, port);
+    String body = JSON.toJSONString(point);
+    try {
+      sendPostJson(url, body);
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+  }
+
+  private static void sendPostJson(String urls, String body) throws IOException {
+    URL url = new URL(urls);
+    URLConnection connection = url.openConnection();
+    connection.setRequestProperty("accept", "application/json");
+    connection.setRequestProperty("connection", "Keep-Alive");
+    connection.setRequestProperty("Content-Type", "application/json");
+    connection.setRequestProperty("user-agent",
+        "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1;SV1)");
+    connection.setDoInput(true);
+    connection.setDoOutput(true);
+
+    try (PrintWriter out = new PrintWriter(connection.getOutputStream())) {
+      out.print(body);
+      out.flush();
+    }
+
+    try (BufferedReader in = new BufferedReader(
+        new InputStreamReader(connection.getInputStream()))) {
+      StringBuilder result = new StringBuilder();
+      String line;
+      while ((line = in.readLine()) != null) {
+        result.append(line);
+      }
+      System.out.println("responce: " + result);
+    }
+  }
+
+  /**
+   * register time series
+   */
+  public static void register(String ip, String port, String param) {
+    String url = "http://%s:%s/api/ios/registerPhone";
+    url = String.format(url, ip, port);
+    try {
+      String response = sendPostEncoded(url, param);
+      System.out.println(response);
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+  }
+
+  public static String sendPostEncoded(String url, String param) throws IOException {
+    PrintWriter printWriter = null;
+    BufferedReader bufferedReader = null;
+    String result = "";
+    try {
+      URL realUrl = new URL(url);
+      // 打开和URL之间的连接
+      URLConnection conn = realUrl.openConnection();
+      // 设置通用的请求属性
+      conn.setRequestProperty("accept", "*/*");
+      conn.setRequestProperty("connection", "Keep-Alive");
+      conn.setRequestProperty("user-agent",
+          "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1;SV1)");
+      // 发送POST请求必须设置如下两行
+      conn.setDoOutput(true);
+      conn.setDoInput(true);
+      // 获取URLConnection对象对应的输出流
+      printWriter = new PrintWriter(conn.getOutputStream());
+      // 发送请求参数
+      if (param != null) {
+        printWriter.print(param);
+      }
+      // flush输出流的缓冲
+      printWriter.flush();
+      // 定义BufferedReader输入流来读取URL的响应
+      bufferedReader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+      String line;
+      while ((line = bufferedReader.readLine()) != null) {
+        result += line;
+      }
+    } finally { //使用finally块来关闭输出流、输入流
+      if (printWriter != null) {
+        printWriter.close();
+      }
+      if (bufferedReader != null) {
+        bufferedReader.close();
+      }
+    }
+    return result;
   }
 }
 
