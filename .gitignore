@@ -1,12 +1,16 @@
+# Intellij
 *.iml
-
-/local.properties
+*/*.iml
 /.idea/*
+
+#some local files
+local.properties
 .DS_Store
 
 # Gradle files
-.gradle
-/build
+*.gradle
+build/
+*/build/
 gradlew
 gradlew.bat
 
