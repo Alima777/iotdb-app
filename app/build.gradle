@@ -31,6 +31,13 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
-    //implementation files('libs/iotdb-jdbc.jar')
-    implementation files('libs/iotdb-jdbc-0.7.0-jar-with-dependencies.jar')
+
+    // https://mvnrepository.com/artifact/javax.ws.rs/javax.ws.rs-api
+    implementation group: 'javax.ws.rs', name: 'javax.ws.rs-api', version: '2.0.1'
+    // https://mvnrepository.com/artifact/org.glassfish.jersey.core/jersey-client
+    implementation group: 'org.glassfish.jersey.core', name: 'jersey-client', version: '2.30'
+    // https://mvnrepository.com/artifact/org.glassfish.jersey.inject/jersey-hk2
+    implementation group: 'org.glassfish.jersey.inject', name: 'jersey-hk2', version: '2.30'
+    // https://mvnrepository.com/artifact/org.glassfish.jersey.media/jersey-media-json-jackson
+    implementation group: 'org.glassfish.jersey.media', name: 'jersey-media-json-jackson', version: '2.30'
 }
