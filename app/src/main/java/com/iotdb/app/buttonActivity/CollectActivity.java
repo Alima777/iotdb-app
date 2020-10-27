@@ -80,11 +80,6 @@ public class CollectActivity extends Activity implements View.OnClickListener {
     this.userName = intent.getStringExtra(appConstant.USERNAME_STR);
     this.phoneIMEI = getIMIE();
     this.restful = new RESTful(ipAddr, port, phoneIMEI, userName);
-    try {
-      restful.login();
-    } catch (RESTfulException e) {
-      System.out.println(e.getMessage());
-    }
 
     // 获取温度传感器
     mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);

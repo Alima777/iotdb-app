@@ -16,6 +16,7 @@ public class RESTful {
   private String ipAddr;
   private int port;
   private String device;
+  private boolean isLogin = false;
 
   public RESTful(String ipAddr, String port, String imei, String userName) {
     this.ipAddr = ipAddr;
@@ -29,10 +30,14 @@ public class RESTful {
     if (!response.readEntity(String.class).equals(appConstant.SUCCESSFUL_RESPONSE)) {
       throw new RESTfulException("Login in error");
     }
+    isLogin = true;
   }
 
   public void createTimeSeries(String measurement, String dataType, String Encoding)
       throws RESTfulException {
+    if (!isLogin) {
+      login();
+    }
     JSONArray createArray = new JSONArray();
     JSONObject timeSeries = new JSONObject();
     StringBuilder timeSeriesStr = new StringBuilder();
@@ -53,6 +58,9 @@ public class RESTful {
 
   public void insertData(String measurement, long timestamp, Object value)
       throws RESTfulException {
+    if (!isLogin) {
+      login();
+    }
     JSONArray insertArray = new JSONArray();
     JSONObject insertRow = new JSONObject();
     insertRow.put(appConstant.IS_NEED_INFER_TYPE, false);
@@ -79,6 +87,9 @@ public class RESTful {
    * delete time series
    */
   public void deleteTimeSeriesTest(String timeSeriesStr) throws RESTfulException {
+    if (!isLogin) {
+      login();
+    }
     JSONArray deleteArray = new JSONArray();
     deleteArray.add(timeSeriesStr);
 
