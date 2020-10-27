@@ -62,7 +62,7 @@ public class RESTTest implements Serializable {
     JSONArray measurements = new JSONArray();
     measurements.add("s1");
     insertRow.put(appConstant.MEASUREMENTS, measurements);
-    insertRow.put(appConstant.TIMESTAMP, 10086);
+    insertRow.put(appConstant.TIMESTAMP, System.currentTimeMillis());
     JSONArray values = new JSONArray();
     values.add(10086);
     insertRow.put(appConstant.VALUES, values);
